@@ -30,7 +30,7 @@ app.use(express.static(publicDirectoryPath));
 io.on("connection", (socket) => {
 
   // Server -> Single connected
-  socket.emit("message", "Welcome!");
+  socket.emit("message", {text: "Welcome!"});
 
   // Server -> All active connections except the current one
   socket.broadcast.emit("message", generateMessage("A new user has joined"));

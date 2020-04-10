@@ -10,7 +10,7 @@ const socketio = require("socket.io");
 const Filter = require("bad-words");
 
 // Messages tools
-const { generateMessage } = require("./utils/messages")
+const { generateMessage, generateLocationMessage } = require("./utils/messages")
 
 // Create server
 const app = express();
@@ -28,9 +28,6 @@ app.use(express.static(publicDirectoryPath));
 
 // Listen for connections
 io.on("connection", (socket) => {
-
-  // Log the new connection
-  // console.log("New socket connection");
 
   // Server -> Single connected
   socket.emit("message", "Welcome!");
@@ -55,8 +52,7 @@ io.on("connection", (socket) => {
 
   // Recieve latitude and longitude from client, then publish location to all clients
   socket.on("sendLocation", (coords, callback) => {
-    io.emit("locationMessage",
-      "https://google.com/maps?q=" + coords.latitude + "," + coords.longitude);
+    io.emit("locationMessage", generateLocationMessage(coords));
     callback();
   });
 

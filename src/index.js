@@ -4,6 +4,8 @@ const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
 
+const Filter = require("bad-words");
+
 
 // Create server
 const app = express();
@@ -30,13 +32,19 @@ io.on("connection", (socket) => {
   socket.broadcast.emit("message", "A new user has joined");
 
   // Server -> All active connections
-  socket.on("sendMessage", (msg) => {
+  socket.on("sendMessage", (msg, callback) => {
+    const filter = new Filter();
+    if (filter.isProfane(msg)) {
+      return callback("Profanity is not allowed");
+    }
     io.emit("message", msg);
+    callback();
   });
 
   // Recieve latitude and longitude from client, then publish location to all clients
-  socket.on("sendLocation", (coords) => {
+  socket.on("sendLocation", (coords, callback) => {
     io.emit("message", "https://google.com/maps?q=" + coords.latitude + "," + coords.longitude);
+    callback();
   });
 
   // When a single connection closes

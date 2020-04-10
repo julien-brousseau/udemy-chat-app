@@ -23,6 +23,7 @@ app.use(express.static(publicDirectoryPath));
 // Listen for connections
 io.on("connection", (socket) => {
 
+  // Log the new connection
   console.log("New socket connection");
 
   // Server -> Single connected
@@ -33,12 +34,17 @@ io.on("connection", (socket) => {
 
   // Server -> All active connections
   socket.on("sendMessage", (msg, callback) => {
+
+    // Filter language
     const filter = new Filter();
     if (filter.isProfane(msg)) {
       return callback("Profanity is not allowed");
     }
+
+    // Send message to every available clients, and execute supplied callback
     io.emit("message", msg);
     callback();
+
   });
 
   // Recieve latitude and longitude from client, then publish location to all clients
@@ -47,7 +53,7 @@ io.on("connection", (socket) => {
     callback();
   });
 
-  // When a single connection closes
+  // Send client disconnect to every available clients
   socket.on("disconnect", () => {
     io.emit("message", "A user has left")
     console.log();

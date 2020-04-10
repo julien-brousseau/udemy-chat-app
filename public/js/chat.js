@@ -1,22 +1,39 @@
 // Websocket object
 const socket = io();
 
+// Elements
+const $messageForm = document.querySelector("#message-form");
+const $messageFormInput = $messageForm.querySelector("input");
+const $messageFormButton = $messageForm.querySelector("button");
+
+const $sendLocation = document.querySelector("#send-location");
+
 // Client recieves the server event sent with socket.emit()
 socket.on("message", (m) => {
   console.log(m);
 });
 
-// Attach emit event to the form submit
-document.querySelector("#message-form").addEventListener("submit", (e) => {
 
-  // Prevent submitting
+// --- HTML events ---
+
+// Attach emit event to the form submit
+$messageForm.addEventListener("submit", (e) => {
+
   e.preventDefault();
 
-  // Message value
-  const msg = e.target.elements.message.value;
+  // Disable the form buttons, and wait for the enable command from server
+  $messageFormButton.setAttribute("disabled", "disabled");
 
-  //
+  // Send a message via the server, and process response
+  const msg = e.target.elements.message.value;
   socket.emit("sendMessage", msg, (error) => {
+
+    // Reset form
+    $messageFormButton.removeAttribute("disabled");
+    $messageFormInput.value = "";
+    $messageFormInput.focus();
+
+    //
     if (error) {
       return console.log(error);
     }
@@ -25,12 +42,13 @@ document.querySelector("#message-form").addEventListener("submit", (e) => {
 })
 
 // Share geolocalisation
-document.querySelector("#send-location").addEventListener("click", () => {
+$sendLocation.addEventListener("click", () => {
+
+  // Disable the button
+  $sendLocation.setAttribute("disabled", "disabled");
 
   // No browser support
-  if (!navigator.geolocation) {
-    return alert("Unable to access geolocation");
-  }
+  if (!navigator.geolocation) return alert("Unable to access geolocation");
 
   // Send latitude and longitude to server
   navigator.geolocation.getCurrentPosition((position) => {
@@ -38,8 +56,12 @@ document.querySelector("#send-location").addEventListener("click", () => {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude
 
-    // Callback from server
-    }, (location, error) => {
+    // Process response
+    }, (error) => {
+
+      // Re-enable the button
+      $sendLocation.removeAttribute("disabled");
+
       console.log("Location shared");
     })
   });

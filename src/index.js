@@ -9,6 +9,8 @@ const socketio = require("socket.io");
 // Profanity filter
 const Filter = require("bad-words");
 
+// Messages tools
+const { generateMessage } = require("./utils/messages")
 
 // Create server
 const app = express();
@@ -23,35 +25,35 @@ const io = socketio(server);
 const publicDirectoryPath = path.join(__dirname, "../public");
 app.use(express.static(publicDirectoryPath));
 
+
 // Listen for connections
 io.on("connection", (socket) => {
 
   // Log the new connection
-  console.log("New socket connection");
+  // console.log("New socket connection");
 
   // Server -> Single connected
   socket.emit("message", "Welcome!");
 
   // Server -> All active connections except the current one
-  socket.broadcast.emit("message", "A new user has joined");
+  socket.broadcast.emit("message", generateMessage("A new user has joined"));
 
   // Server -> All active connections
-  socket.on("sendMessage", (msg, callback) => {
+  socket.on("sendMessage", (message, callback) => {
 
     // Filter language
     const filter = new Filter();
-    if (filter.isProfane(msg)) {
+    if (filter.isProfane(message.text)) {
       return callback("Profanity is not allowed");
     }
 
     // Send message to every available clients, and execute supplied callback
-    io.emit("message", msg);
+    io.emit("message", generateMessage(message));
     callback();
 
   });
 
-  // Recieve latitude and longitude from client,
-  //  then publish location to all clients
+  // Recieve latitude and longitude from client, then publish location to all clients
   socket.on("sendLocation", (coords, callback) => {
     io.emit("locationMessage",
       "https://google.com/maps?q=" + coords.latitude + "," + coords.longitude);
@@ -60,11 +62,12 @@ io.on("connection", (socket) => {
 
   // Send client disconnect to every available clients
   socket.on("disconnect", () => {
-    io.emit("message", "A user has left")
+    io.emit("message", generateMessage("A user has left"))
     console.log();
   });
 
 })
+
 
 // Launch server with port from env file
 const port = process.env.PORT;

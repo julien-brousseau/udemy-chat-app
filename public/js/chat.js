@@ -18,8 +18,13 @@ const locationTemplate = document.querySelector("#location-template").innerHTML;
 // Client recieves the server event sent with socket.emit()
 socket.on("message", (message) => {
 
-  // Render the Mustache template inside the message div
-  const html = Mustache.render(messageTemplate, { message });
+  // Render the Mustache template with properties
+  const html = Mustache.render(messageTemplate, {
+    message: message.text,
+    createdAt: moment(message.createdAt).format("H:mm")
+  });
+
+  // Insert added html into the div
   $messages.insertAdjacentHTML("beforeend", html);
 
 });

@@ -29,11 +29,20 @@ app.use(express.static(publicDirectoryPath));
 // Listen for connections
 io.on("connection", (socket) => {
 
-  // Server -> Single connected
-  socket.emit("message", {text: "Welcome!"});
+  //
+  socket.on("join", ({ username, room }) => {
 
-  // Server -> All active connections except the current one
-  socket.broadcast.emit("message", generateMessage("A new user has joined"));
+    // Sends event to clients
+    socket.join(room);
+
+    // Send welcome message to current client
+    socket.emit("message", {text: "Welcome!"});
+
+    // Send a message to every available clients, except the current one
+    socket.broadcast.to(room).emit("message",
+      generateMessage(`${username} has joined`));
+
+  });
 
   // Server -> All active connections
   socket.on("sendMessage", (message, callback) => {
@@ -45,7 +54,7 @@ io.on("connection", (socket) => {
     }
 
     // Send message to every available clients, and execute supplied callback
-    io.emit("message", generateMessage(message));
+    io.to("123").emit("message", generateMessage(message));
     callback();
 
   });
@@ -58,7 +67,8 @@ io.on("connection", (socket) => {
 
   // Send client disconnect to every available clients
   socket.on("disconnect", () => {
-    io.emit("message", generateMessage("A user has left"))
+    io.emit("message",
+      generateMessage(`User has left`))
     console.log();
   });
 

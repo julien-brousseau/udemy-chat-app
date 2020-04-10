@@ -5,12 +5,29 @@ const socket = io();
 const $messageForm = document.querySelector("#message-form");
 const $messageFormInput = $messageForm.querySelector("input");
 const $messageFormButton = $messageForm.querySelector("button");
-
 const $sendLocation = document.querySelector("#send-location");
+const $messages = document.querySelector("#messages");
+
+// Templates
+const messageTemplate = document.querySelector("#message-template").innerHTML;
+const locationTemplate = document.querySelector("#location-template").innerHTML;
+
+
+// Server responses
 
 // Client recieves the server event sent with socket.emit()
-socket.on("message", (m) => {
-  console.log(m);
+socket.on("message", (message) => {
+
+  // Render the Mustache template inside the message div
+  const html = Mustache.render(messageTemplate, { message });
+  $messages.insertAdjacentHTML("beforeend", html);
+
+});
+
+// Server location link
+socket.on("locationMessage", (url) => {
+    const html = Mustache.render(locationTemplate, { url });
+    $messages.insertAdjacentHTML("beforeend", html);
 });
 
 
@@ -33,11 +50,12 @@ $messageForm.addEventListener("submit", (e) => {
     $messageFormInput.value = "";
     $messageFormInput.focus();
 
-    //
+    // Process response
     if (error) {
       return console.log(error);
     }
     console.log("Message delivered");
+
   });
 })
 

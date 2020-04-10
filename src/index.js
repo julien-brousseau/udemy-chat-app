@@ -2,8 +2,11 @@
 const path = require("path");
 const http = require("http");
 const express = require("express");
+
+// Websocket library
 const socketio = require("socket.io");
 
+// Profanity filter
 const Filter = require("bad-words");
 
 
@@ -47,9 +50,11 @@ io.on("connection", (socket) => {
 
   });
 
-  // Recieve latitude and longitude from client, then publish location to all clients
+  // Recieve latitude and longitude from client,
+  //  then publish location to all clients
   socket.on("sendLocation", (coords, callback) => {
-    io.emit("message", "https://google.com/maps?q=" + coords.latitude + "," + coords.longitude);
+    io.emit("locationMessage",
+      "https://google.com/maps?q=" + coords.latitude + "," + coords.longitude);
     callback();
   });
 

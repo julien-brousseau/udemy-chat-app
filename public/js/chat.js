@@ -11,6 +11,7 @@ const $messages = document.querySelector("#messages");
 // Templates
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
+const sidebarTemplate = document.querySelector("#sidebar-template").innerHTML;
 
 // Options
 // Get the current URL data using the QueryString library (loaded as script)
@@ -23,6 +24,7 @@ socket.on("message", (message) => {
 
   // Render the Mustache template with properties
   const html = Mustache.render(messageTemplate, {
+    username: message.username,
     message: message.text,
     createdAt: moment(message.createdAt).format("H:mm")
   });
@@ -35,10 +37,17 @@ socket.on("message", (message) => {
 // Server location link
 socket.on("locationMessage", (message) => {
     const html = Mustache.render(locationTemplate, {
+      username: message.username,
       url: message.url,
       createdAt: moment(message.createdAt).format("H:mm")
     });
     $messages.insertAdjacentHTML("beforeend", html);
+});
+
+// Refresh users list
+socket.on("roomData", ({ room, users }) => {
+  const html = Mustache.render(sidebarTemplate, { room, users })
+  document.querySelector("#sidebar").innerHTML = html;
 });
 
 
@@ -97,4 +106,10 @@ $sendLocation.addEventListener("click", () => {
 
 });
 
-socket.emit("join", { username, room });
+// Join a chat room, or redirect to / if incorrect data
+socket.emit("join", { username, room }, (error) => {
+  if (error) {
+    alert(error)
+    location.href = "/";
+  }
+});

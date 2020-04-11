@@ -12,6 +12,9 @@ const Filter = require("bad-words");
 // Messages tools
 const { generateMessage, generateLocationMessage } = require("./utils/messages")
 
+// Users tools
+const { addUser, removeUser, getUser, getUsersInRoom } = require("./utils/users")
+
 // Create server
 const app = express();
 
@@ -29,23 +32,42 @@ app.use(express.static(publicDirectoryPath));
 // Listen for connections
 io.on("connection", (socket) => {
 
-  //
-  socket.on("join", ({ username, room }) => {
+  // Join room command
+  socket.on("join", ({ username, room }, callback) => {
+
+    // Add user and store the error or the user object
+    // Socket.id is the automatically generated ID
+    const { error, user } = addUser({ id: socket.id, username, room })
+
+    // Send back error if failed
+    if (error) return callback(error);
 
     // Sends event to clients
-    socket.join(room);
+    socket.join(user.room);
 
     // Send welcome message to current client
     socket.emit("message", {text: "Welcome!"});
 
     // Send a message to every available clients, except the current one
-    socket.broadcast.to(room).emit("message",
-      generateMessage(`${username} has joined`));
+    socket.broadcast.to(user.room).emit("message",
+      generateMessage("Admin", `${user.username} has joined`));
+
+    // Send user list to clients for update
+    io.to(user.room).emit("roomData", {
+      room: user.room,
+      users: getUsersInRoom(user.room)
+    })
+
+    // Let client know the join is successful
+    callback()
 
   });
 
-  // Server -> All active connections
+  // Send message to chat toom
   socket.on("sendMessage", (message, callback) => {
+
+    // Get current client user data
+    const user = getUser(socket.id);
 
     // Filter language
     const filter = new Filter();
@@ -54,22 +76,30 @@ io.on("connection", (socket) => {
     }
 
     // Send message to every available clients, and execute supplied callback
-    io.to("123").emit("message", generateMessage(message));
+    io.to(user.room).emit("message",
+      generateMessage(user.username, message));
     callback();
 
   });
 
   // Recieve latitude and longitude from client, then publish location to all clients
   socket.on("sendLocation", (coords, callback) => {
-    io.emit("locationMessage", generateLocationMessage(coords));
+    const user = getUser(socket.id);
+    io.to(user.room).emit("locationMessage",
+      generateLocationMessage(user.username, coords));
     callback();
   });
 
   // Send client disconnect to every available clients
   socket.on("disconnect", () => {
-    io.emit("message",
-      generateMessage(`User has left`))
-    console.log();
+    const user = removeUser(socket.id);
+    if (user) {
+      io.to(user.room).emit("message", generateMessage("Admin", `${user.username} has left`));
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room)
+      });
+    }
   });
 
 })

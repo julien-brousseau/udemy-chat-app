@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
 
 
 // Launch server with port from env file
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 server.listen(port, () => {
   console.log("Server started on port " + port);
 });
